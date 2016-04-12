@@ -1,0 +1,260 @@
+#include <GL/glew.h> // Include the GLEW header file  
+#include <GL/glut.h> // Include the GLUT header file  
+#include <cmath>
+
+bool movingUp = false; // Whether or not we are moving up or down  
+float xLocation = 0.0f; // Keep track of our position on the y axis.  
+float yRotationAngle = 0.0f; // The angle of rotation for our object 
+
+
+#define SMALL_ANGLE  0.05                            /* Small rotation angle        */
+#define SMALL_DISTANCE  0.005                        /* Small translation distance  */
+static double center = 0.0;                         /* Current Center of Gravity   */
+
+static double rotation_angle = 0.0;                 /* Current angle increment     */
+static double translation_distance = 0.0;           /* Current translation increment */
+
+
+#define point 4
+#define line 5
+#define triangle 6
+#define sphere 3
+#define torus 1
+#define cone 2
+static int object = torus;
+
+void display(void) {
+
+	glClearColor(1.0f, 0.0f, 0.0f, 1.0f); // Clear the background of our window to red  
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Clear the colour buffer (more buffers later on)  
+	glLoadIdentity(); // Load the Identity Matrix to reset our drawing locations  
+
+	glTranslatef(0.0f, 0.0f, -5.0f); // Push eveything 5 units back into the scene, otherwise we won't see the primitive  
+
+	glTranslatef(xLocation, 0.0f, 0.0f); // Translate our object along the y axis  
+	glPushMatrix();
+	glRotatef(yRotationAngle, 0.0f, 0.0f, 1.0f); // Rotate our object around the y axis  
+	glCallList(object);
+	glPopMatrix();
+	glutSwapBuffers();
+	glFlush(); // Flush the OpenGL buffers to the window  
+
+
+	yRotationAngle += rotation_angle;
+	xLocation += translation_distance;
+
+	if (movingUp) // If we are moving up  
+		xLocation -= 0.005f; // Move up along our yLocation  
+	else  // Otherwise  
+		xLocation += 0.005f; // Move down along our yLocation  
+
+	if (xLocation < -3.0f) // If we have gone up too far  
+		movingUp = false; // Reverse our direction so we are moving down  
+	else if (xLocation > 3.0f) // Else if we have gone down too far  
+		movingUp = true; // Reverse our direction so we are moving up  
+
+	yRotationAngle += 0.005f; // Increment our rotation value  
+
+	if (yRotationAngle > 360.0f) // If we have rotated beyond 360 degrees (a full rotation)  
+		yRotationAngle -= 360.0f; // Subtract 360 degrees off of our rotation  
+}
+
+void reshape(int width, int height) {
+	glViewport(0, 0, (GLsizei)width, (GLsizei)height); // Set our viewport to the size of our window  
+	glMatrixMode(GL_PROJECTION); // Switch to the projection matrix so that we can manipulate how our scene is viewed  
+	glLoadIdentity(); // Reset the projection matrix to the identity matrix so that we don't get any artifacts (cleaning up)  
+
+	gluPerspective(60, (GLfloat)width / (GLfloat)height, 1.0, 100.0); // Set the Field of view angle (in degrees), the aspect ratio of our window, and the new and far planes  
+
+	glMatrixMode(GL_MODELVIEW); // Switch back to the model view matrix, so that we can start drawing shapes correctly  
+}
+
+void subMenu(int item)
+{
+
+		switch (item) {
+		case 1:
+			object = cone;
+			break;
+		case 2:
+			object = torus;
+			break;
+		case 3:
+			object = sphere;
+			break;
+		
+		}
+	};
+
+	void mainMenu(int value)
+	{
+
+		static int is_rotation = 0;
+		static int is_translation = 0;
+
+		switch (value) {
+
+
+		case 1:
+
+			if (is_rotation) {
+				rotation_angle = 0.0;
+				is_rotation = 0;
+
+			}
+			else {
+				rotation_angle = SMALL_ANGLE;
+				is_rotation = 1;
+
+			};
+
+			break;
+
+		case 2:
+
+			if (is_translation) {
+				translation_distance = 0.0;
+				is_translation = 0;
+
+
+			}
+			else {
+				translation_distance = SMALL_DISTANCE;
+				is_translation = 1;
+
+			};
+
+			break;
+
+		case 4:
+
+			exit(0);
+			break;
+
+		};
+
+	};
+
+
+	void subMenu1(int item)
+	{
+		
+			switch (item) {
+			case 1:
+				object = point;
+				break;
+			case 2:
+				object = line;
+				break;
+			case 3:
+				object = triangle;
+				break;
+
+			};
+		};
+
+
+
+int main(int argc, char **argv) {
+	glutInit(&argc, argv); // Initialize GLUT  
+	glutInitDisplayMode(GLUT_SINGLE); // Set up a basic display buffer (only single buffered for now)  
+	glutInitWindowSize(500, 500); // Set the width and height of the window  
+	glutInitWindowPosition(100, 100); // Set the position of the window  
+	glutCreateWindow("Your first OpenGL Window"); // Set the title for the window  
+
+	glutDisplayFunc(display); // Tell GLUT to use the method "display" for rendering  
+
+	glutIdleFunc(display); // Tell GLUT to use the method "display" as our idle method as well 
+
+
+
+	glutReshapeFunc(reshape); // Tell GLUT to use the method "reshape" for reshaping 
+
+
+
+
+	
+
+	int menIdSub = glutCreateMenu(subMenu);
+	glutAddMenuEntry("cone", 1);
+	glutAddMenuEntry("torus", 2);
+	glutAddMenuEntry("sphere", 3);
+	
+
+	/* Create submenu for shape*/
+	int Sub1 = glutCreateMenu(subMenu1);
+	glutAddMenuEntry("point", 1);
+	glutAddMenuEntry("line", 2);
+	glutAddMenuEntry("triangle", 3);
+
+
+
+
+	/* Create main menu */
+	int menIdMain = glutCreateMenu(mainMenu);
+	glutAddSubMenu("primitives", Sub1);
+	glutAddMenuEntry("Rotation On", 1);
+	glutAddMenuEntry("Translation On", 2);
+	glutAddSubMenu("solid", menIdSub);
+	glutAddMenuEntry("Quit", 4);
+
+
+	glutAttachMenu(GLUT_LEFT_BUTTON);
+
+
+
+	glNewList(point, GL_COMPILE);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glPointSize(5);
+	glBegin(GL_POINTS);
+	
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex2f(0.0F, 0.5F);
+	
+	glEnd();
+	glEndList();
+
+
+	glNewList(line, GL_COMPILE);
+	glBegin(GL_LINES);
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex2f(0.5, 0.3);
+	glVertex2f(1.0, 0.5);
+	glEnd();
+	glEndList();
+
+	glNewList(triangle, GL_COMPILE);
+	glBegin(GL_POLYGON);
+	glColor3f(1.0F, 0.0F, 0.0F);
+	glVertex2f(0.0F, 0.5F);
+	glColor3f(0.0F, 1.0F, 0.0F);
+	glVertex2f(-0.4330F, -0.25F);
+	glColor3f(0.0F, 0.0F, 1.0F);
+	glVertex2f(0.433F, -0.25F);
+	glEnd();
+	glEndList();
+
+	glNewList(torus, GL_COMPILE);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glColor3f(1.0, 1.0, 1.0);
+	glutWireTorus(0.5, 3, 15, 30);
+	glEnd();
+	glEndList();
+
+	glNewList(sphere, GL_COMPILE);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glColor3f(1.0, 1.0, 1.0);
+	glutWireSphere(1.0, 30, 30);
+	glEnd();
+	glEndList();
+
+
+	glNewList(cone, GL_COMPILE);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glColor3f(1.0, 1.0, 1.0);
+	glutSolidCone(1.0, 2.0, 70, 12);
+	glEnd();
+	glEndList();
+
+	glutMainLoop(); // Enter GLUT's main loop  
+}
